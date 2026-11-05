@@ -1,0 +1,37 @@
+[22:31:18] ############ ARM A rep1
+[22:45:00] env-check: ok
+[22:45:00] engines: 1  gateway: 1
+approx   prompt_n  prefill_t/s  decode_t/s  decode(min~max) draft_acc
+60       130       83.8         60.8        48~74        35/51    
+1000     1072      280.2        64.0        52~76        26/65    
+4000     4071      896.7        74.0        74~74        34/55    
+8000     8070      1235.4       80.8        80~82        35/48    
+[22:45:55] ---- ARM A rep1 END
+[22:45:55] ############ ARM B rep1
+[23:00:03] env-check: ok
+[23:00:03] engines: 1  gateway: 1
+approx   prompt_n  prefill_t/s  decode_t/s  decode(min~max) draft_acc
+60       133       83.1         67.8        62~74        37/51    
+1000     1073      279.4        79.3        71~88        36/56    
+4000     4070      897.5        66.0        66~66        31/56    
+8000     8072      1233.0       79.2        75~84        37/55    
+[23:00:59] ---- ARM B rep1 END
+[23:00:59] ############ ARM A rep2
+[23:15:20] env-check: ok
+[23:15:20] engines: 1  gateway: 1
+approx   prompt_n  prefill_t/s  decode_t/s  decode(min~max) draft_acc
+60       130       83.0         63.2        54~72        35/60    
+1000     1071      280.8        73.2        70~77        35/54    
+4000     4073      898.1        61.8        57~66        25/59    
+8000     8071      1232.3       71.6        70~73        33/56    
+[23:16:16] ---- ARM A rep2 END
+[23:16:16] ############ ARM B rep2
+[23:30:31] env-check: ok
+[23:30:32] engines: 1  gateway: 1
+approx   prompt_n  prefill_t/s  decode_t/s  decode(min~max) draft_acc
+60       133       84.3         53.5        46~60        34/65    
+1000     1071      280.2        75.1        71~79        37/64    
+4000     4070      895.2        73.0        66~80        35/61    
+8000     8070      1226.0       72.5        66~79        37/60    
+[23:31:28] ---- ARM B rep2 END
+[23:31:28] ALLDONE
