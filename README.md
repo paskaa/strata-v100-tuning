@@ -210,6 +210,9 @@ frp 条目：`254-8080`（`localPort 8080` → `remotePort 58080`），`frpc` �
 
 1. split engine 实跑（需单独时段 + 精简配置）。
 2. `#3185` / `#3648` 单独回放验证（价值低）。
-3. `--numa-hot-node` 的 A/B —— **本轮没跑成**：第一臂加载到一半时服务被人占用，为不打断访问而中止，没有数据。
-   要跑就 `bash scripts/strata_numa_ab.sh 2`（4 臂，约 1 小时，期间 8080 会反复不可用）。
+3. ~~`--numa-hot-node` 的 A/B~~ —— **2026-11-06 已做，无收益，结论：不用**。
+   4 臂 × 2 轮交替（A=默认不传参、B=`--numa-hot-node 0`），prefill 全档差 <0.5%（8000-token：1232.0/1232.3/1196.0/1234.4），
+   decode 均值 A rep1=68.2、B rep1=68.2、A rep2=71.9、B rep2=68.1 —— 全在 ±15% 噪声内。
+   官方 `NUMA placement` 日志显式两节点各分到 ~50%（node0 15.95 GiB / node1 15.86 GiB），已自动均衡，无"单边绑定"问题。
+   最终配置保持不带 `--numa-hot-node`，少传一个参数。数据：`/tmp/strata_numa.out`。
 4. 用 IQ3_S + MTP4 + 单 lane 复现上游 +10% 的开关收益。
