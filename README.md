@@ -47,7 +47,7 @@ A/B 各两轮，prefill 四档差 < 0.6%，decode 均值 68.7 vs 70.8（噪声 �
 ```jsonc
 // /root/Strata-upstream/strata-unsloth-ud-q4_k_xl.json（应用会重写 env，故开关放启动脚本）
 {
-  "port": 8080, "host": "0.0.0.0",
+  "port": 8080,
   "layer_split": "20",
   "user_args": ["--spec", "4", "--draft-conf", "0.5"],
   "args": ["--pack ...", "--expert-cache auto", "--prefill auto", "--max-context 262144",
@@ -182,31 +182,14 @@ bash /root/strata_ab13.sh 2
 
 ---
 
-## 9. 对外访问（已实测三条路都通）
+## 9. 注意（重要）
 
-| 路径 | 地址 | 结果 |
-|---|---|---|
-| 本机 | `http://127.0.0.1:8080/v1/models` | 200 |
-| 内网 | `http://192.168.110.254:8080/v1/models` | 200（需 `--host 0.0.0.0`，已写进 `run-unsloth-ud-q4_k_xl.sh`） |
-| 公网 | `http://47.116.196.11:58080/v1/models` | 200，且 `/v1/chat/completions` 能正常出结果 |
-
-frp 条目：`254-8080`（`localPort 8080` → `remotePort 58080`），`frpc` 状态 `running`；
-配置在 `/opt/1panel/apps/frpc/frpc/data/frpc.toml`，改完走 `curl -u admin:<pw> http://127.0.0.1:7400/api/reload` 热加载（别重启容器）。
-
-> 小坑：公网带 `thinking` 且 `max_tokens` 很小时，可能出现 `content` 为空、只有 `reasoning_content` 的回答
-> （正是上游 #5189 描述的现象，其 `short_answer_room` 补丁未并）。要稳定出正文就给 ≥1024 的 `max_tokens`。
-
-## 10. 注意（重要）
-
-- 服务监听 **0.0.0.0:8080** 并经 frp 暴露为 **47.116.196.11:58080**。
-  **该端点没有鉴权**：任何能连上的人都能用这张卡的算力。要么在 frp 侧限制来源，要么给服务加 `--api-key`
-  （本地客户端需同步带 Bearer），要么只保留内网访问。
 - 每次重启要重读 34 GiB 补集（~5.5 分钟）+ 填显存缓存（~2 分钟），期间 8080 不可用；
   跑调优脚本前先确认没人在用。
 
 ---
 
-## 11. 未做
+## 10. 未做
 
 1. split engine 实跑（需单独时段 + 精简配置）。
 2. `#3185` / `#3648` 单独回放验证（价值低）。
