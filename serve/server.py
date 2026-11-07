@@ -7240,7 +7240,10 @@ def openai_collect(chunks) -> dict:
     calls = [by_index[i] for i in sorted(by_index)]
     if last["choices"][0]["finish_reason"] != "tool_calls":
         calls = [c for c in calls if _is_json(c["function"]["arguments"])]   # a call the output ended inside (#211)
-    msg = {"role": "assistant", "content": "".join(content) or None}
+    # An empty reply keeps content: null only beside tool calls, as OpenAI sends it; a reply with no text and no
+    # call gets "" so a client that requires a string does not fail (#5249).
+    text = "".join(content)
+    msg = {"role": "assistant", "content": text or (None if calls else "")}
     if "".join(reasoning).strip() and "".join(reasoning).strip() == "".join(content).strip():
         reasoning = []              # a turn with no </think> (serve/dsml.py): the text is the answer; it is not also reasoning
     if "".join(reasoning):

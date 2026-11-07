@@ -1413,6 +1413,22 @@ class UnfinishedToolCall(unittest.TestCase):
         msg = openai_collect([chunk({"tool_calls": [cut]}), chunk({}, "stop")])["choices"][0]["message"]
         self.assertNotIn("tool_calls", msg)
 
+    def test_an_empty_reply_has_empty_content_unless_it_has_calls(self):
+        """#5249: a reply that ran out of max_tokens while thinking has no text and no call.  OpenAI sends null only
+        beside tool calls; a string-only client fails on null."""
+        from serve.server import openai_collect
+
+        def chunk(delta, finish=None):
+            return {"id": "c", "created": 1, "model": "m", "usage": {},
+                    "choices": [{"index": 0, "delta": delta, "finish_reason": finish}]}
+        msg = openai_collect([chunk({"reasoning_content": "thinking"}), chunk({}, "length")])["choices"][0]["message"]
+        self.assertEqual(msg["content"], "")
+        self.assertEqual(msg["reasoning_content"], "thinking")
+        call = {"index": 0, "id": "a", "type": "function", "function": {"name": "f", "arguments": '{"x": 1}'}}
+        msg = openai_collect([chunk({"tool_calls": [call]}), chunk({}, "tool_calls")])["choices"][0]["message"]
+        self.assertIsNone(msg["content"])
+        self.assertEqual([c["id"] for c in msg["tool_calls"]], ["a"])
+
     def test_a_whole_call(self):
         whole = {"path": "notes.txt", "content": "all of it"}
         a = self.answers(self.WHOLE)

@@ -8,7 +8,7 @@
   "--expert-profile",
   "/root/Strata-upstream/data/expert-profile.bin",
   "--expert-cache",
-  "auto",
+  "14300",
   "--prefill",
   "auto",
   "--spec",
@@ -18,7 +18,7 @@
   "--mtp",
   "/root/Strata-data/mtp/rt",
   "--max-context",
-  "262144",
+  "131072",
   "--kv",
   "int8",
   "--ple-io",
@@ -103,5 +103,6 @@
  "reasoning_budget_tokens": 8192,
  "anthropic_thinking": "model",
  "engine_silence_s": 300,
- "drafting": "mtp"
+ "drafting": "mtp",
+ "context": 131072
 }
