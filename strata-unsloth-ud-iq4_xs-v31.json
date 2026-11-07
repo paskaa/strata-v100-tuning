@@ -36,7 +36,9 @@
   "16384",
   "--batch-mtp",
   "--batch-groups",
-  "1"
+  "1",
+  "--conversation-cache-slots",
+  "32"
  ],
  "cwd": "/root/Strata-upstream",
  "tokenizer": "/root/Strata-data/packs/unsloth-ud-iq4_xs-v31/tokenizer",
