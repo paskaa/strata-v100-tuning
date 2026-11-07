@@ -24,7 +24,7 @@
   "--ple-io",
   "ram",
   "--kv-resident",
-  "32768",
+  "65536",
   "--resident-budget-gib",
   "34",
   "--vision",
@@ -33,7 +33,10 @@
   "--prompt-cache",
   "16",
   "--conversation-cache-mib",
-  "16384"
+  "16384",
+  "--batch-mtp",
+  "--batch-groups",
+  "1"
  ],
  "cwd": "/root/Strata-upstream",
  "tokenizer": "/root/Strata-data/packs/unsloth-ud-iq4_xs-v31/tokenizer",
@@ -67,8 +70,8 @@
   1
  ],
  "gpus_asked": true,
- "layer_split": "20",
- "parallel": 1,
+ "layer_split": "26",
+ "parallel": 2,
  "vision": {
   "exe": "/root/Strata-upstream/engine-cuda12/strata-vision",
   "mmproj": "/root/Strata-data/models/mmproj-Qwen3.8-Flash-Next-BF16.gguf",
@@ -97,5 +100,6 @@
  ],
  "reasoning_budget_tokens": 8192,
  "anthropic_thinking": "model",
- "engine_silence_s": 300
+ "engine_silence_s": 300,
+ "drafting": "mtp"
 }
