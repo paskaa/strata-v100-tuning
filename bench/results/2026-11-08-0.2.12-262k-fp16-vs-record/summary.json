@@ -1,0 +1,158 @@
+{
+ "config": "0.2.12 (engine 0.1.58) / UD-IQ4_XS-v31 / 262K / fp16 / kvr49152 / reserve512 / batch2 / MTP / layer-split 26",
+ "record": "bench-matrix.md rows (0.1.57 / 262K / int8 / kvr65536 / reserve1536 / MTP/p2/batch-mtp)",
+ "sectionA": {
+  "512:0:300": {
+   "prompt_n": 572,
+   "prompt_tok_s": 313.7,
+   "decode_tok_s": 77.1,
+   "predicted_n": 300,
+   "ttft_s": 1.8621656894683838,
+   "wall_s": 5.901,
+   "draft_accepted": 170,
+   "draft_offered": 357,
+   "cache_n": 0,
+   "n": 3
+  },
+  "4096:0:300": {
+   "prompt_n": 4138,
+   "prompt_tok_s": 910.0,
+   "decode_tok_s": 76.0,
+   "predicted_n": 300,
+   "ttft_s": 4.582326650619507,
+   "wall_s": 8.624,
+   "draft_accepted": 161,
+   "draft_offered": 318,
+   "cache_n": 0,
+   "n": 3
+  },
+  "16384:0:300": {
+   "prompt_n": 16320,
+   "prompt_tok_s": 1527.4,
+   "decode_tok_s": 75.4,
+   "predicted_n": 300,
+   "ttft_s": 10.734805345535278,
+   "wall_s": 14.699,
+   "draft_accepted": 169,
+   "draft_offered": 338,
+   "cache_n": 0,
+   "n": 3
+  },
+  "32768:0:300": {
+   "prompt_n": 33209,
+   "prompt_tok_s": 1781.8,
+   "decode_tok_s": 74.0,
+   "predicted_n": 300,
+   "ttft_s": 18.701716899871826,
+   "wall_s": 22.779,
+   "draft_accepted": 162,
+   "draft_offered": 318,
+   "cache_n": 0,
+   "n": 3
+  },
+  "4096:0:1024": {
+   "prompt_n": 4173,
+   "prompt_tok_s": 722.1,
+   "decode_tok_s": 75.5,
+   "predicted_n": 733,
+   "ttft_s": 5.810115337371826,
+   "wall_s": 15.727,
+   "draft_accepted": 396,
+   "draft_offered": 833,
+   "cache_n": 0,
+   "n": 3
+  }
+ },
+ "sectionB": [
+  {
+   "round": 0,
+   "wall_s": 19.221,
+   "req": [
+    {
+     "ttft_s": 12.647289991378784,
+     "wall_s": 19.22,
+     "stream_tokens": 300,
+     "chars": 1428,
+     "finish": "length"
+    },
+    {
+     "ttft_s": 11.60314416885376,
+     "wall_s": 19.057,
+     "stream_tokens": 300,
+     "chars": 1406,
+     "finish": "length"
+    }
+   ],
+   "slot0_tokens": 300,
+   "slot0_wall": 19.22,
+   "slot0_ttft": 12.647289991378784,
+   "slot0_decode": 45.6,
+   "slot1_tokens": 300,
+   "slot1_wall": 19.057,
+   "slot1_ttft": 11.60314416885376,
+   "slot1_decode": 40.2
+  },
+  {
+   "round": 1,
+   "wall_s": 19.423,
+   "req": [
+    {
+     "ttft_s": 12.933483123779297,
+     "wall_s": 19.396,
+     "stream_tokens": 300,
+     "chars": 1406,
+     "finish": "length"
+    },
+    {
+     "ttft_s": 11.884344577789307,
+     "wall_s": 19.421,
+     "stream_tokens": 300,
+     "chars": 1392,
+     "finish": "length"
+    }
+   ],
+   "slot0_tokens": 300,
+   "slot0_wall": 19.396,
+   "slot0_ttft": 12.933483123779297,
+   "slot0_decode": 46.4,
+   "slot1_tokens": 300,
+   "slot1_wall": 19.421,
+   "slot1_ttft": 11.884344577789307,
+   "slot1_decode": 39.8
+  },
+  {
+   "round": 2,
+   "wall_s": 19.032,
+   "req": [
+    {
+     "ttft_s": 12.588910341262817,
+     "wall_s": 18.961,
+     "stream_tokens": 300,
+     "chars": 1452,
+     "finish": "length"
+    },
+    {
+     "ttft_s": 11.565190553665161,
+     "wall_s": 19.03,
+     "stream_tokens": 300,
+     "chars": 1458,
+     "finish": "length"
+    }
+   ],
+   "slot0_tokens": 300,
+   "slot0_wall": 18.961,
+   "slot0_ttft": 12.588910341262817,
+   "slot0_decode": 47.1,
+   "slot1_tokens": 300,
+   "slot1_wall": 19.03,
+   "slot1_ttft": 11.565190553665161,
+   "slot1_decode": 40.2
+  }
+ ],
+ "recorded_A": {
+  "512:0:300": "61.3, 69.1 decode (2 runs)",
+  "4096:0:300": "71.9, 84.5 decode / 904, 922 prompt",
+  "16384:0:300": "93.1, 83.3 decode / 1447, 1432 prompt"
+ },
+ "recorded_B": "41.8 / 37.4 decode, wall 42s (MTP/p2/serial+batch-mtp/kv65536)"
+}
