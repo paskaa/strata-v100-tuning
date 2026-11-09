@@ -199,3 +199,36 @@ bash /root/strata_ab13.sh 2
    官方 `NUMA placement` 日志显式两节点各分到 ~50%（node0 15.95 GiB / node1 15.86 GiB），已自动均衡，无"单边绑定"问题。
    最终配置保持不带 `--numa-hot-node`，少传一个参数。数据：`/tmp/strata_numa.out`。
 4. 用 IQ3_S + MTP4 + 单 lane 复现上游 +10% 的开关收益。
+
+---
+
+## 11. Split 引擎生产（2026-11-09 上线）
+
+全史见 `调优记录整合.md`；原始数据 `data/split-conc-results-20261109/`；复现脚本 `scripts/split_conc_bench.py`；生产配置（hosts 已脱敏）`data/strata-split-q4kx-prod.json`。
+
+- 引擎：`strata-split-2-sm70`（当前源码重编，CUDA 12.8 + SM60 实验开关；含上游 per-pool residency fix）+ Q4_K_XL；262K + fp16 KV + **batch 1** + spec 8 + DFlash2 + 会话缓存 4096MiB。
+- 实测（decodetest 200tok）：单路热 decode **约 152 tok/s**（对照旧 IQ4 峰值 96.7，+57%）；并发串行满速无饥饿；prompt ~28 tok/s 是短板。
+- 结论：batch 2/3 更差，batch 4 曾触发 `prefill: ring error 2`（fp16 环和溢出）。
+- 识图：CPU `strata-vision`，不占显存，`images: true` 恢复。
+- 服务端 #5643（reasoning 恢复）已合入，多轮缓存命中 86%。
+- VRAM 提醒（上游 VRAM_HEADROOM）：余 277–297MiB 落在布局敏感带，长上下文冒烟待补。
+
+---
+
+## 11. Split 引擎生产（2026-11-09 上线）
+
+全史见 `调优记录整合.md`；原始数据 `data/split-conc-results-20261109/`；复现脚本 `scripts/split_conc_bench.py`；
+生产配置（hosts 已脱敏）`data/strata-split-q4kx-prod.json`。
+
+- 引擎：`strata-split-2-sm70`（从当前源码重编，CUDA 12.8 + `-DSTRATA_EXPERIMENTAL_SM60=ON`；
+  含上游 per-pool residency fix 20885f7a/a7cc8faa）；模型 `qwen3.8-flash-next-ud-q4_k_xl`；
+  262K + fp16 KV（`FNX_KV8=0`）+ **batch 1** + spec 8 + DFlash2 草稿 + 会话缓存 4096 MiB。
+- 实测（`tools` 同口径 decodetest，200 token）：单路热 decode **约 152 tok/s**
+  （对照旧 IQ4 生产峰值 96.7，+57%）；并发串行满速（2/4 并发各单 138–166，无饥饿）；
+  prompt 读 ~28 tok/s（短板）。
+- 关键反直觉结论：batch 2/3 更差（单路 142/133，并发饥饿/墙钟翻倍），batch 4 曾触发
+  `prefill: ring error 2`（fp16 环和溢出， err bit 2 = 环和见 NaN/inf 或超 65504）。
+- 识图：CPU `strata-vision`（不占显存，`images: true` 恢复）。
+- 服务端 #5643（reasoning 恢复）已合入：丢 reasoning 的多轮缓存命中 86%。
+- VRAM 提醒（上游 VRAM_HEADROOM）：余 277–297 MiB/卡落在布局敏感带；崩塌看分配布局
+  不看剩余 MiB，长上下文冒烟待补。
