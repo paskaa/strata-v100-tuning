@@ -163,6 +163,13 @@ Follow the prompts to download and start a model. [Terminal guide](docs/TERMINAL
 | **NVIDIA DGX Spark · Linux** | [DGX Spark setup](docs/DGX_SPARK_LINUX.md) |
 | **NVIDIA Tesla V100 · 16/32 GB (Volta, sm_70)** | [V100 tuning notes](https://github.com/paskaa/strata-v100-tuning) (split engine + Gyro-L TQP decode) |
 
+### Tesla V100 (Volta, sm_70) — tuning branch
+
+This branch (`v100-v213`, on top of 0.2.13) carries the V100 work: the sm_70 split
+engine, refusal-direction cvec wiring (loader + engine/prefill hooks), and Gyro-L
+pair-trellis TQP5/6/7 (ggml 147–149) decode support. Production configs and measured
+numbers live in the [tuning notes](https://github.com/paskaa/strata-v100-tuning).
+
 <a id="using-it"></a>
 
 ## Tools
