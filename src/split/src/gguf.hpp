@@ -24,6 +24,8 @@ enum GgmlType : uint32_t {
     T_F32 = 0, T_F16 = 1, T_Q4_0 = 2, T_Q4_1 = 3, T_Q5_0 = 6, T_Q5_1 = 7, T_Q8_0 = 8, T_Q8_1 = 9, T_Q2_K = 10,
     T_Q3_K = 11, T_Q4_K = 12, T_Q5_K = 13, T_Q6_K = 14, T_Q8_K = 15, T_IQ3_XXS = 18, T_IQ4_NL = 20, T_IQ3_S = 21, T_IQ2_S = 22,
     T_IQ4_XS = 23, T_BF16 = 30, T_Q2_0 = 42,   // 42: Strata's 64-value 2-bit blocks (not in llama.cpp)
+    T_TQ2_T = 144, T_TQK6 = 145, T_TQK7 = 146,   // Gyro S/M trellis (agention fork ids; upstream ggml stops earlier)
+    T_TQP5 = 147, T_TQP6 = 148, T_TQP7 = 149,    // Gyro-L pair trellis (64 steps x K bits, 2 weights/step)
 };
 
 struct TypeInfo {

@@ -40,6 +40,12 @@ TypeInfo type_info(uint32_t t) {
         case T_IQ2_S: return {256, 82};
         case T_IQ4_XS: return {256, 136};
         case T_Q2_0: return {64, 18};
+        case T_TQ2_T: return {128, 34};   // block_tq2_t: d + 32 trellis bytes
+        case T_TQK6: return {128, 26};    // block_tqk6: d + 4*6 stream bytes
+        case T_TQK7: return {128, 30};    // block_tqk7: d + 4*7 stream bytes
+        case T_TQP5: return {128, 42};    // block_tqp5: d + 8*5 pair-trellis bytes (Gyro-L)
+        case T_TQP6: return {128, 50};    // block_tqp6: d + 8*6 pair-trellis bytes (Gyro-L)
+        case T_TQP7: return {128, 58};    // block_tqp7: d + 8*7 pair-trellis bytes (Gyro-L)
     }
     throw std::runtime_error("gguf: unknown ggml type " + std::to_string(t));
 }

@@ -37,6 +37,7 @@
 #undef cudaFuncSetAttribute   // ggml's maps it to hipFuncSetAttribute(const void*, ...); the tree's template takes the kernel
 #endif
 #include "iqdot_hip.cuh"   // HIP: the i-quant dots with a cheaper sign expansion (same integers as ggml's)
+#include "tq_dot.cuh"   // Gyro-L pair trellis (147-149): ggml traits (global) + split decode dots (fnx::tq)
 
 // compiled in parts (Makefile: build/kernels_pN.o with -DFNX_KPART=N), each with its share of the launchers below and
 // so only the template kernels they instantiate: one file's ~700 kernels took ~7 minutes on one core
@@ -158,6 +159,9 @@ template <ggml_type type> __device__ __forceinline__ float vdot(const void* v, c
 #else
     else if constexpr (type == GGML_TYPE_IQ2_S) return vec_dot_iq2_s_q8_1(v, y, kbx, iqs);
 #endif
+    else if constexpr (type == (ggml_type)147) return tq::vec_dot_tqp<(ggml_type)147>(v, y, kbx, iqs);
+    else if constexpr (type == (ggml_type)148) return tq::vec_dot_tqp<(ggml_type)148>(v, y, kbx, iqs);
+    else if constexpr (type == (ggml_type)149) return tq::vec_dot_tqp<(ggml_type)149>(v, y, kbx, iqs);
     else return 0.0f;
 }
 template <ggml_type type> constexpr int vdr_of() {
@@ -172,6 +176,7 @@ template <ggml_type type> constexpr int vdr_of() {
     else if constexpr (type == GGML_TYPE_IQ4_XS) return VDR_IQ4_XS_Q8_1_MMVQ;
     else if constexpr (type == GGML_TYPE_IQ3_S) return VDR_IQ3_S_Q8_1_MMVQ;
     else if constexpr (type == GGML_TYPE_IQ3_XXS) return VDR_IQ3_XXS_Q8_1_MMVQ;
+    else if constexpr (type == (ggml_type)147 || type == (ggml_type)148 || type == (ggml_type)149) return 4;
     else return VDR_IQ2_S_Q8_1_MMVQ;
 }
 
@@ -2198,6 +2203,9 @@ void moe_mm(bool down, const DW& A, size_t sa, const Job* jobs, const int* njobs
         case T_IQ3_S: moe_launch<GGML_TYPE_IQ3_S>(down, w, jobs, njobs, njobs_max, in, (float*) out, s, T); break;
         case T_IQ3_XXS: moe_launch<GGML_TYPE_IQ3_XXS>(down, w, jobs, njobs, njobs_max, in, (float*) out, s, T); break;
         case T_IQ2_S: moe_launch<GGML_TYPE_IQ2_S>(down, w, jobs, njobs, njobs_max, in, (float*) out, s, T); break;
+        case T_TQP5: moe_launch<(ggml_type)147>(down, w, jobs, njobs, njobs_max, in, (float*) out, s, T); break;
+        case T_TQP6: moe_launch<(ggml_type)148>(down, w, jobs, njobs, njobs_max, in, (float*) out, s, T); break;
+        case T_TQP7: moe_launch<(ggml_type)149>(down, w, jobs, njobs, njobs_max, in, (float*) out, s, T); break;
         default: throw std::runtime_error("moe: expert type " + std::to_string(A.type) + " not handled");
     }
     ck_launch(down ? "moe_down" : "moe_gate_up");
@@ -2247,6 +2255,9 @@ void moe_gate_up(const DW& A, size_t sa, const Job* jobs, const int* njobs, int 
         case T_IQ3_S: gu_sd_launch<GGML_TYPE_IQ3_S>(T, w, jobs, njobs, njobs_max, y, gu, s, sd); break;
         case T_IQ3_XXS: gu_sd_launch<GGML_TYPE_IQ3_XXS>(T, w, jobs, njobs, njobs_max, y, gu, s, sd); break;
         case T_IQ2_S: gu_sd_launch<GGML_TYPE_IQ2_S>(T, w, jobs, njobs, njobs_max, y, gu, s, sd); break;
+        case T_TQP5: gu_sd_launch<(ggml_type)147>(T, w, jobs, njobs, njobs_max, y, gu, s, sd); break;
+        case T_TQP6: gu_sd_launch<(ggml_type)148>(T, w, jobs, njobs, njobs_max, y, gu, s, sd); break;
+        case T_TQP7: gu_sd_launch<(ggml_type)149>(T, w, jobs, njobs, njobs_max, y, gu, s, sd); break;
         default: throw std::runtime_error("moe_gate_up: the shared expert rides in the launch of expert type " + std::to_string(A.type) + " only for the types moe_mm handles");
     }
     ck_launch("moe_gate_up (with the shared expert)");
@@ -2275,6 +2286,9 @@ void moe_mm_big(bool down, const DW& A, size_t sa, const BigJob* jobs, const int
         case T_IQ3_S: moe_launch_big<GGML_TYPE_IQ3_S>(down, w, jobs, njobs, njobs_cap, in, (float*) out, s); break;
         case T_IQ3_XXS: moe_launch_big<GGML_TYPE_IQ3_XXS>(down, w, jobs, njobs, njobs_cap, in, (float*) out, s); break;
         case T_IQ2_S: moe_launch_big<GGML_TYPE_IQ2_S>(down, w, jobs, njobs, njobs_cap, in, (float*) out, s); break;
+        case T_TQP5: moe_launch_big<(ggml_type)147>(down, w, jobs, njobs, njobs_cap, in, (float*) out, s); break;
+        case T_TQP6: moe_launch_big<(ggml_type)148>(down, w, jobs, njobs, njobs_cap, in, (float*) out, s); break;
+        case T_TQP7: moe_launch_big<(ggml_type)149>(down, w, jobs, njobs, njobs_cap, in, (float*) out, s); break;
         default: throw std::runtime_error("moe: expert type " + std::to_string(A.type) + " not handled");
     }
     ck_launch(down ? "moe_down (big jobs)" : "moe_gate_up (big jobs)");

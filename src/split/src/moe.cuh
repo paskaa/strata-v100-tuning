@@ -239,7 +239,12 @@ template <ggml_type type, int U>
 __device__ __forceinline__ float unit_dot(const char* wrow, int u, const block_q8_1* y) {
     constexpr int qk = ggml_cuda_type_traits<type>::qk, qi = ggml_cuda_type_traits<type>::qi, vdr = vdr_of<type>();
     float s = 0.f;
-    if constexpr (U % qk == 0) {
+    if constexpr (type == (ggml_type)147 || type == (ggml_type)148 || type == (ggml_type)149) {
+        // TQP down: 32-wide units over 128-value blocks (the U%qk gate cannot pass).
+        // Quarter q of block blk against the unit's own q8_1 block (y + u).
+        static_assert(U == 32, "TQP down units are 32 wide");
+        return fnx::tq::down_dot_tqp<type>(wrow, u / 4, u % 4, y + u);
+    } else if constexpr (U % qk == 0) {
 #pragma unroll
         for (int b = 0; b < U / qk; ++b) {
             const int kbx = u * (U / qk) + b;
@@ -422,7 +427,8 @@ template <ggml_type TA>
 void moe_launch_big(bool down, const MoeW& w, const BigJob* jobs, const int* njobs, int njobs_cap, const void* in, float* out,
                     cudaStream_t s) {
     if (down) {
-        if (!unit_ok<TA>(DN_U) || w.ncols / DN_U > DN_MAXB)
+        constexpr bool tqd = TA == (ggml_type)147 || TA == (ggml_type)148 || TA == (ggml_type)149;
+        if ((!tqd && !unit_ok<TA>(DN_U)) || w.ncols / DN_U > DN_MAXB)
             throw std::runtime_error("moe_down: shape or type does not fit the units");
         const int rpb = DN_THREADS / (w.ncols / DN_U);
         k_moe_down_big<TA><<<dim3((w.nrows + rpb - 1) / rpb, njobs_cap), DN_THREADS, 0, s>>>(w, jobs, njobs, (const float*) in, out);
@@ -507,7 +513,8 @@ template <ggml_type TA>
 void moe_launch(bool down, const MoeW& w, const Job* jobs, const int* njobs, int njobs_max, const void* in, float* out,
                 cudaStream_t s, int T) {
     if (down) {
-        if (!unit_ok<TA>(DN_U) || w.ncols / DN_U > DN_MAXB)
+        constexpr bool tqd = TA == (ggml_type)147 || TA == (ggml_type)148 || TA == (ggml_type)149;
+        if ((!tqd && !unit_ok<TA>(DN_U)) || w.ncols / DN_U > DN_MAXB)
             throw std::runtime_error("moe_down: shape or type does not fit the units");
         const int rpb = DN_THREADS / (w.ncols / DN_U), nh = njobs_max * (w.ncols / DN_U);   // njobs_max: the window's pairs
         const dim3 grid((w.nrows + rpb - 1) / rpb, njobs_max);
