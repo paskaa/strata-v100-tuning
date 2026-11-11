@@ -173,6 +173,60 @@ class Config(unittest.TestCase):
             S.split_config(self.base(), decide(enabled=False), exe="e", native="n", mtp_dir="m", draft_vocab="v", context=1)
 
 
+class ControlVector(unittest.TestCase):
+    """the control-vector flags (cvec_args): a run config's --control-vector* must reach the split engine's own arg list,
+    the same spellings strata generate takes (src/split/tools/sfnx.cpp, parse_args)."""
+
+    def base(self, args=None):
+        return {"exe": "engine/strata", "args": args if args is not None else ["--native", "m.gguf"], "cwd": "/x",
+                "tokenizer": "tok", "port": 8080, "model_name": "m", "log": "l.log", "gpu": [0, 1], "env": {},
+                "layer_split": "auto"}
+
+    def cfg(self, args=None):
+        return S.split_config(self.base(args), decide(), exe="/e/strata-split-2", native="/m/shard1.gguf",
+                              mtp_dir="/d/mtp/rt", draft_vocab="/d/draft_vocab_en.bin", context=131072)
+
+    def test_no_vector_flags_passes_nothing(self):
+        self.assertEqual(S.cvec_args([]), [])
+        self.assertEqual(S.cvec_args(["--native", "m.gguf", "--layer-split", "auto"]), [])
+
+    def test_each_flag_takes_its_values_in_order_and_the_input_is_unchanged(self):
+        args = ["--native", "m.gguf", "--control-vector-scaled", "a.gguf:0.5,b.gguf:1.5", "--max-context", "131072",
+                "--control-vector-layer-range", "4", "44", "--cvec-mode", "project", "--cvec-dir", "single:7",
+                "--control-vector", "c.gguf", "--vision"]
+        self.assertEqual(S.cvec_args(args), ["--control-vector-scaled", "a.gguf:0.5,b.gguf:1.5",
+                                             "--control-vector-layer-range", "4", "44", "--cvec-mode", "project",
+                                             "--cvec-dir", "single:7", "--control-vector", "c.gguf"])
+        self.assertEqual(args, ["--native", "m.gguf", "--control-vector-scaled", "a.gguf:0.5,b.gguf:1.5",
+                                "--max-context", "131072", "--control-vector-layer-range", "4", "44", "--cvec-mode",
+                                "project", "--cvec-dir", "single:7", "--control-vector", "c.gguf", "--vision"])
+
+    def test_a_flag_cut_off_at_the_end_is_passed_as_it_stands(self):
+        self.assertEqual(S.cvec_args(["--control-vector-scaled"]), ["--control-vector-scaled"])
+        self.assertEqual(S.cvec_args(["--control-vector-layer-range", "4"]), ["--control-vector-layer-range", "4"])
+
+    def test_split_config_carries_the_vector_and_keeps_the_base_and_the_fallback(self):
+        args = ["--native", "m.gguf", "--control-vector-scaled", "esp.gguf:0.7", "--control-vector-layer-range", "4", "44",
+                "--cvec-mode", "project", "--cvec-dir", "per-layer"]
+        cfg = self.cfg(args)
+        self.assertEqual(cfg["args"][cfg["args"].index("--control-vector-scaled"):][:2],
+                         ["--control-vector-scaled", "esp.gguf:0.7"])
+        self.assertEqual(cfg["args"][cfg["args"].index("--control-vector-layer-range"):][:3],
+                         ["--control-vector-layer-range", "4", "44"])
+        self.assertEqual(cfg["args"][cfg["args"].index("--cvec-mode") + 1], "project")
+        self.assertEqual(cfg["args"][cfg["args"].index("--cvec-dir") + 1], "per-layer")
+        self.assertEqual(args, ["--native", "m.gguf", "--control-vector-scaled", "esp.gguf:0.7",
+                                "--control-vector-layer-range", "4", "44", "--cvec-mode", "project",
+                                "--cvec-dir", "per-layer"])   # the base is not changed
+        self.assertEqual(cfg["split_fallback"]["args"], args)
+
+    def test_the_engine_parses_every_flag_cvec_args_can_forward(self):
+        text = (ROOT / "src" / "split" / "tools" / "sfnx.cpp").read_text(encoding="utf-8")
+        for flag in S.CV_FLAGS:
+            self.assertIn(f'k == "{flag}"', text, flag)
+        self.assertIn("int cvec_mode = 1", text)   # add, like strata generate's default (src/program/generate.cpp)
+
+
 class Apply(unittest.TestCase):
     """apply_to_config: the launcher's side (facts of this PC and model in, a run config out)."""
 

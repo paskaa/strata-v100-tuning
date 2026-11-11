@@ -263,6 +263,26 @@ def decide(*, enabled: bool, system: str, cards: list[Card], ram_total_gib: floa
     return Decision(True, [], n, untested, need_vram, need_ram, **facts)
 
 
+CV_FLAGS = {"--control-vector-scaled": 1, "--control-vector-layer-range": 2, "--cvec-mode": 1, "--cvec-dir": 1,
+            "--control-vector": 1}   # the control-vector flags and how many values each takes
+
+
+def cvec_args(args: list[str]) -> list[str]:
+    """The control-vector flags out of the person's own base args: split_config builds the split engine's args
+    itself, and the ESP vector a run config loads (--control-vector-scaled ...) must reach it the same way.
+    The engine validates the values; a flag that is cut off at the end is passed as it stands."""
+    out: list[str] = []
+    i = 0
+    while i < len(args):
+        n = CV_FLAGS.get(args[i])
+        if n is None:
+            i += 1
+            continue
+        out += args[i : i + 1 + n]
+        i += 1 + n
+    return out
+
+
 def split_config(base: dict, decision: Decision, *, exe: str, native: str, mtp_dir: str | None, draft_vocab: str, context: int,
                  lanes: int = DEFAULT_LANES, vision: bool = False, cache_mib: int = CONVERSATION_CACHE_MIB, dflash2_pack: str | None = None) -> dict:
     """The run config for strata-split: `base` is the normal run config (its tokenizer, port, log, model name, GPUs and everything else
@@ -276,6 +296,7 @@ def split_config(base: dict, decision: Decision, *, exe: str, native: str, mtp_d
     drafter = ["--draft", "dflash2", "--draft-model", dflash2_pack] if dflash2_pack else ["--mtp", mtp_dir]
     cfg["args"] = ["--native", native, *drafter, "--draft-vocab", draft_vocab, "--max-context", str(context),
                    "--spec", "6", "--lookup", "15", "--conversation-cache-mib", str(cache_mib), "--batch", str(min(MAX_LANES, max(lanes, 1)))]
+    cfg["args"] += cvec_args(base.get("args") or [])   # the person's control vector (cvec_args), when the run config loads one
     if vision:
         cfg["args"].append("--vision")
     # every expert in the cards' memory, no expert cache, no arena: the engine reads these two at start

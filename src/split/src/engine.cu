@@ -5,6 +5,13 @@
 #include "engine_parts.hpp"
 #include "env.hpp"
 #include "peer_probe.hpp"
+#include "strata/kernels/cvec.hpp"
+
+// the control vector on the residual stream (include/strata/kernels/cvec.hpp): cvec() says which layers it covers,
+// cvec_apply projects a layer's rows; the engine applies it where a steered layer's pending FFN write would
+// otherwise fold into the next layer's read (a read point per steered layer, decided at load time, so the captured
+// graphs depend on it; a request switched off runs the stock kernels with the same arithmetic, bit for bit)
+namespace cvk = strata::kernels;
 
 #include <cuda_runtime.h>
 #include <unistd.h>
@@ -1011,6 +1018,12 @@ void Engine::enqueue(int T, bool dumps) {
                 ple_post(b.R, b.ple_key, b.ple_val, w.ple_norm_key, w.ple_norm_query, w.ple_norm_conv, w.ple_conv,
                          b.ple_hist, b.ple_hsnap, T, eps, b.st, b.ple_key + (size_t) MAXT * D);
             }
+            // cvec: layer l - 1's FFN write goes through the fused kernel here (its write is the read's own
+            // arithmetic) and the read then takes R as materialized; layer 0 is never steered, so PLE is untouched
+            if (apply && l != PLE_LAYER && cvk::cvec().covers(l - 1)) {
+                cvk::cvec_apply(b.R, l - 1, T, D, b.bo_f, N, b.inj_f, HC, true, b.st);
+                apply = false;
+            }
             hc_read(b.R, apply ? b.bo_f : nullptr, b.inj_f, L.hc_norm[0], L.hc_down[0], L.hc_up[0], L.hc_inj[0], eps, b.mixed,
                     b.inj_a, b.hcs, b.ring.err, T, b.st, b.xq);
             if (!is_attn(l)) {
@@ -1048,7 +1061,9 @@ void Engine::enqueue(int T, bool dumps) {
     }
     // ---- head: the final mixer (no injection) with the last write folded in, then this card's vocabulary
     each([&](int c, CardBuf& b, const CardW& w) {
-        hc_read(b.R, b.bo_f, b.inj_f, w.head_norm, w.head_down, w.head_up, nullptr, eps, b.mixed, b.inj_a, b.hcs, b.ring.err, T, b.st, b.xq);
+        const bool head_steered = cvk::cvec().covers(NL - 1);   // steered to the last layer: project its pending
+        if (head_steered) cvk::cvec_apply(b.R, NL - 1, T, D, b.bo_f, N, b.inj_f, HC, true, b.st);   // write here (see enqueue())
+        hc_read(b.R, head_steered ? nullptr : b.bo_f, b.inj_f, w.head_norm, w.head_down, w.head_up, nullptr, eps, b.mixed, b.inj_a, b.hcs, b.ring.err, T, b.st, b.xq);
         dense(w.out, b.xq, b.head_logits, b, T);
         argmax(b.head_logits, w.v1 - w.v0, T, w.v0, b.best_v, b.best_i, b.am_keys, b.ring.err, b.st);
     });
@@ -1082,6 +1097,10 @@ void Engine::enqueue_batch(const std::vector<int>& lanes) {
                     ple_post(b.R + (size_t) r * D, b.ple_key + (size_t) r * D, b.ple_val + (size_t) r * N, w.ple_norm_key, w.ple_norm_query,
                              w.ple_norm_conv, w.ple_conv, b.lanes[(size_t) lanes[r]].ple_hist, b.ple_hsnap, 1, eps, b.st,
                              b.ple_key + (size_t) MAXT * D);
+            }
+            if (apply && l != PLE_LAYER && cvk::cvec().covers(l - 1)) {   // enqueue()'s cvec point (see there)
+                cvk::cvec_apply(b.R, l - 1, T, D, b.bo_f, N, b.inj_f, HC, true, b.st);
+                apply = false;
             }
             hc_read(b.R, apply ? b.bo_f : nullptr, b.inj_f, L.hc_norm[0], L.hc_down[0], L.hc_up[0], L.hc_inj[0], eps, b.mixed,
                     b.inj_a, b.hcs, b.ring.err, T, b.st, b.xq);
@@ -1126,7 +1145,9 @@ void Engine::enqueue_batch(const std::vector<int>& lanes) {
         ++call;
     }
     each([&](int, CardBuf& b, const CardW& w) {
-        hc_read(b.R, b.bo_f, b.inj_f, w.head_norm, w.head_down, w.head_up, nullptr, eps, b.mixed, b.inj_a, b.hcs, b.ring.err, T, b.st, b.xq);
+        const bool head_steered = cvk::cvec().covers(NL - 1);   // steered to the last layer: project its pending
+        if (head_steered) cvk::cvec_apply(b.R, NL - 1, T, D, b.bo_f, N, b.inj_f, HC, true, b.st);   // write here (see enqueue())
+        hc_read(b.R, head_steered ? nullptr : b.bo_f, b.inj_f, w.head_norm, w.head_down, w.head_up, nullptr, eps, b.mixed, b.inj_a, b.hcs, b.ring.err, T, b.st, b.xq);
         dense(w.out, b.xq, b.head_logits, b, T);
         argmax(b.head_logits, w.v1 - w.v0, T, w.v0, b.best_v, b.best_i, b.am_keys, b.ring.err, b.st);
     });
@@ -1163,6 +1184,10 @@ void Engine::enqueue_rows(const std::vector<int>& lanes, const std::vector<int>&
                              w.ple_conv, b.lanes[(size_t) lanes[i]].ple_hist, b.ple_hsnap + r * 9 * D, counts[(size_t) i], eps, b.st,
                              b.ple_key + (size_t) MAXT * D);
                 }
+            }
+            if (apply && l != PLE_LAYER && cvk::cvec().covers(l - 1)) {   // enqueue()'s cvec point (see there)
+                cvk::cvec_apply(b.R, l - 1, T, D, b.bo_f, N, b.inj_f, HC, true, b.st);
+                apply = false;
             }
             hc_read(b.R, apply ? b.bo_f : nullptr, b.inj_f, L.hc_norm[0], L.hc_down[0], L.hc_up[0], L.hc_inj[0], eps, b.mixed,
                     b.inj_a, b.hcs, b.ring.err, T, b.st, b.xq);
@@ -1212,7 +1237,9 @@ void Engine::enqueue_rows(const std::vector<int>& lanes, const std::vector<int>&
         ++call;
     }
     each([&](int, CardBuf& b, const CardW& w) {
-        hc_read(b.R, b.bo_f, b.inj_f, w.head_norm, w.head_down, w.head_up, nullptr, eps, b.mixed, b.inj_a, b.hcs, b.ring.err, T, b.st, b.xq);
+        const bool head_steered = cvk::cvec().covers(NL - 1);   // steered to the last layer: project its pending
+        if (head_steered) cvk::cvec_apply(b.R, NL - 1, T, D, b.bo_f, N, b.inj_f, HC, true, b.st);   // write here (see enqueue())
+        hc_read(b.R, head_steered ? nullptr : b.bo_f, b.inj_f, w.head_norm, w.head_down, w.head_up, nullptr, eps, b.mixed, b.inj_a, b.hcs, b.ring.err, T, b.st, b.xq);
         dense(w.out, b.xq, b.head_logits, b, T);
         argmax(b.head_logits, w.v1 - w.v0, T, w.v0, b.best_v, b.best_i, b.am_keys, b.ring.err, b.st);
     });

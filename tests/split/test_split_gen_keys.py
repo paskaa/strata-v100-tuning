@@ -11,7 +11,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 
-# keys the split engine's parse_gen accepts (some only note that they change nothing: pin, pcie_frac, spec_min_p, pipe, aux_cpus, cvec)
+# keys the split engine's parse_gen accepts (some only note that they change nothing: pin, pcie_frac, spec_min_p, pipe, aux_cpus;
+# cvec is the real per-request projection switch, cvec_load.cpp / src/split/src/engine.cu)
 ACCEPTED = {"temperature", "top_p", "top_k", "min_p", "penalty_repeat", "penalty_freq", "penalty_present", "penalty_last_n", "seed", "keep", "ckpt", "pin",
             "pcie_frac", "spec_min_p", "pipe", "aux_cpus", "cvec", "img_keys"}
 # keys the server does not send to a split engine: pen_from is dropped (StrataEngine.pen_from_key), logprobs / allowed / logit_bias are refused with a 400 first

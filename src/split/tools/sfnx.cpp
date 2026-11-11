@@ -42,9 +42,11 @@
 #include <vector>
 
 #include "../src/batch.hpp"
+#include "../src/cvec_load.hpp"
 #include "../src/engine.hpp"
 #include "../src/env.hpp"
 #include "../src/session.hpp"
+#include "strata/kernels/cvec.hpp"
 #include "sfnx_input.hpp"
 
 namespace {
@@ -68,6 +70,9 @@ struct Args {
     int max_ctx = 262144, K = 6, lookup = 15, batch = 1;
     long cache_mib = 0;   // checkpoints and parked conversations in host memory (0: none)
     bool vision = false;  // GENI / BGENI: prompts with images (embeddings from sfnx-vision)
+    // the control vector (src/cvec_load.cpp): the same flags as strata generate, none by default
+    std::vector<std::pair<std::string, float>> cvec_files;
+    int cvec_mode = 1, cvec_first = 0, cvec_last = 0, cvec_single = -1;   // add, like strata generate's default
 };
 
 Args parse_args(int argc, char** argv) {
@@ -91,6 +96,37 @@ Args parse_args(int argc, char** argv) {
         else if (k == "--conversation-cache-mib") a.cache_mib = std::stol(val());
         else if (k == "--batch") a.batch = std::stoi(val());
         else if (k == "--layer-split") val();   // Strata's layer split; sFNX splits every layer across the cards
+        // the control vector: the same spellings as strata generate (src/cvec_load.cpp reads the files at start)
+        else if (k == "--control-vector") a.cvec_files.push_back({val(), 1.0f});
+        else if (k == "--control-vector-scaled") {
+            // FILE:SCALE, comma-separated; the LAST colon splits, so a Windows path (C:\...) keeps its drive
+            std::stringstream list(val());
+            std::string item;
+            while (std::getline(list, item, ',')) {
+                const size_t colon = item.rfind(':');
+                char* end = nullptr;
+                const float sc = colon == std::string::npos ? 0.0f : std::strtof(item.c_str() + colon + 1, &end);
+                if (colon == std::string::npos || colon == 0 || end == item.c_str() + colon + 1 || *end != '\0')
+                    throw std::runtime_error("--control-vector-scaled: expected FILE:SCALE, got '" + item + "'");
+                a.cvec_files.push_back({item.substr(0, colon), sc});
+            }
+        }
+        else if (k == "--control-vector-layer-range") {
+            a.cvec_first = std::atoi(val().c_str());
+            a.cvec_last = std::atoi(val().c_str());
+        }
+        else if (k == "--cvec-mode") {
+            const std::string v = val();
+            if (v == "project") a.cvec_mode = 0;
+            else if (v == "add") a.cvec_mode = 1;
+            else throw std::runtime_error("--cvec-mode: add or project, got '" + v + "'");
+        }
+        else if (k == "--cvec-dir") {
+            const std::string v = val();
+            if (v == "per-layer") a.cvec_single = -1;
+            else if (v.rfind("single:", 0) == 0) a.cvec_single = std::atoi(v.c_str() + 7);
+            else throw std::runtime_error("--cvec-dir: per-layer or single:L, got '" + v + "'");
+        }
         else if (k == "--rope-scale") {   // YaRN for a longer context: the engine reads it as FNX_ROPE_SCALE
             const std::string s = val();
             if (const char* e = std::getenv("FNX_ROPE_SCALE"); e && s != e)
@@ -119,6 +155,7 @@ struct GenReq {
     long seq = 0;   // its number among the request lines (Input)
     int slot = -1;
     int max_new = 0;
+    bool cvec = true;   // cvec=0|1: the control vector for this request (absent = on, as strata's --serve line)
     fnx::Sampling s;
     fnx::ReadHints hints;
     std::vector<int> ids;
@@ -277,16 +314,20 @@ GenReq parse_gen(const std::string& line, int vocab, int pad, bool batch, bool i
             if (v != "0" && v != "1") throw std::runtime_error(cmd + ": ckpt=" + v + " is not 0 or 1");
             r.hints.cache = v == "1";
         }
+        else if (k == "cvec") {   // the control vector for this request (the device flag; between requests, like strata's --serve)
+            if (v != "0" && v != "1") throw std::runtime_error(cmd + ": cvec=" + v + " is not 0 or 1");
+            r.cvec = v == "1";
+        }
         else if (k == "pin") {   // a client's strata_prefix: sFNX's cache has no pinned checkpoints
             static bool said = false;
             if (!said) std::fprintf(stderr, "sfnx: pin= (a client's strata_prefix) is not supported: such requests go on without it\n");
             said = true;
         }
-        // Strata's per-request engine tuning (strata_tune) and its control vector: nothing in sFNX to set
-        else if (k == "pcie_frac" || k == "spec_min_p" || k == "pipe" || k == "aux_cpus" || k == "cvec") {
+        // Strata's per-request engine tuning (strata_tune): nothing in sFNX to set (its control vector is cvec= above)
+        else if (k == "pcie_frac" || k == "spec_min_p" || k == "pipe" || k == "aux_cpus") {
             static std::set<std::string> said;
             if (said.insert(k).second)
-                std::fprintf(stderr, "sfnx: %s= (Strata's per-request engine tuning or control vector) has nothing to set in sfnx: "
+                std::fprintf(stderr, "sfnx: %s= (Strata's per-request engine tuning) has nothing to set in sfnx: "
                                      "such requests go on without it\n", k.c_str());
         }
         else throw std::runtime_error(cmd + ": unknown key " + k);
@@ -802,6 +843,7 @@ struct Server {
     void solo(const GenReq& r) {
         const Running running(in, r.seq);
         yield_said = false;
+        strata::kernels::cvec_set_enabled(r.cvec);   // the request's projection switch (no-op unchanged; the engine idles here)
         int slot = best_slot(r.ids, 0);
         if (slot < 0) {   // the front end sends GEN only when no slot decodes
             say("ERR GEN: every slot is decoding");
@@ -870,7 +912,9 @@ struct Server {
             return;
         }
         const Running running(in, r.seq);
-        const int i = r.slot;
+        strata::kernels::cvec_set_enabled(r.cvec);   // the admission's projection switch; like strata's, the flag is
+        const int i = r.slot;                        // one for the process: a window that crosses two requests runs the
+                                                     // last one admitted (serve/ sends it per request, and a batch build is the exception)
         // the slot takes the idle lane that holds most of the prompt (the front end picks slots by what it believes they
         // hold; the lanes are sFNX's to deal)
         const int k = best_slot(r.ids, i);
@@ -1116,6 +1160,7 @@ int main(int argc, char** argv) {
     std::optional<fnx::Mtp> mtp;
     std::optional<fnx::df2::Bridge> df2;
     std::optional<fnx::Engine> e;
+    std::string cvec_summary;   // INFO cvec= ("project:4-44"), empty: no vector
     try {
         m.emplace(a.gguf.c_str());
         if (a.draft == "dflash2") {
@@ -1127,6 +1172,17 @@ int main(int argc, char** argv) {
         e.emplace(*m, a.max_ctx, a.batch);
         if (mtp) e->mtp_attach(*mtp);
         else e->df2_attach(*df2);
+        // the control vector, before any window graph is captured: which layers the vector covers decides where a
+        // steered layer's pending FFN write is made (src/engine.cu, src/prefill.cu), and the graphs bake that in
+        if (!a.cvec_files.empty()) {
+            std::string err;
+            std::vector<int> devs;
+            for (const fnx::CardW& cw : m->cards) devs.push_back(cw.dev);
+            if (!fnx::load_control_vectors(a.cvec_files, a.cvec_mode, a.cvec_first, a.cvec_last, a.cvec_single,
+                                      cvec_summary, err))
+                throw std::runtime_error(err);
+            if (!fnx::cvec_place(devs, err)) throw std::runtime_error(err);
+        }
     } catch (const std::exception& ex) {
         fail(ex);
     }
@@ -1149,7 +1205,8 @@ int main(int argc, char** argv) {
             std::fprintf(stderr, "sfnx: %d cards builds and passes the CPU checks but has not been validated on hardware "
                                  "(docs/verification.md, \"Other card counts\")\n", fnx::NCARD);
         say("INFO engine=sfnx version=0.2 spec=" + std::to_string(a.K) + " conversation_cache_mib=" + std::to_string(a.cache_mib) +
-            (a.batch > 1 ? " batch_slots=" + std::to_string(a.batch) + " slot_cache=1" : ""));
+            (a.batch > 1 ? " batch_slots=" + std::to_string(a.batch) + " slot_cache=1" : "") +
+            (cvec_summary.empty() ? "" : " cvec=" + cvec_summary));   // serve/server.py: engine.info["cvec"]
         say("READY " + std::to_string(a.max_ctx) + " stop");
         std::thread reader([&] { in.run(); });
         reader.detach();

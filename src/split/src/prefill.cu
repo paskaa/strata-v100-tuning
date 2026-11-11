@@ -12,6 +12,8 @@
 #include "engine_impl.hpp"
 #include "env.hpp"
 #include "pf_ring_plan.hpp"
+#include "strata/kernels/cvec.hpp"
+namespace cvk = strata::kernels;   // the control vector; the read points are engine.cu's enqueue()'s scheme (see there)
 #if FNX_HIP
 #include "hip/rccl.h"
 #endif
@@ -1549,7 +1551,15 @@ void Engine::prefill_pass(const std::vector<PfChunk>& chunks, bool staging, cons
             __half* mh = p.hf16 ? p.mixhk[j] : nullptr;
             if (half == 0) {
                 ckc(cudaStreamWaitEvent(s, p.ev_rf[j], 0), "ffn sum");
-                for (int q = 0; q < nq; ++q) pf_hc_read_rows(p, p.R, p.bo_f, p.inj_f, L.hc_norm[0], L.hc_down[0], L.hc_up[0], L.hc_inj[0], eps, p.mixed, p.inj_a, Q0(q), QN(q), s, mh);
+                // cvec on the split read: project this card's rows here (its FFN sum rows are the ones it holds),
+                // the read then takes R as materialized (same fused arithmetic; engine.cu's enqueue() scheme)
+                const float* ffn_bo = p.bo_f;
+                if (cvk::cvec().covers(l - 1)) {
+                    cvk::cvec_apply(p.R + (size_t) r0 * D, l - 1, nr, D, p.bo_f + (size_t) r0 * N, N,
+                                    p.inj_f + (size_t) r0 * HC, HC, true, s);
+                    ffn_bo = nullptr;
+                }
+                for (int q = 0; q < nq; ++q) pf_hc_read_rows(p, p.R, ffn_bo, p.inj_f, L.hc_norm[0], L.hc_down[0], L.hc_up[0], L.hc_inj[0], eps, p.mixed, p.inj_a, Q0(q), QN(q), s, mh);
             } else {
                 ckc(cudaStreamWaitEvent(s, p.ev_ra[j], 0), "attention sum");
                 for (int q = 0; q < nq; ++q) pf_hc_read_rows(p, p.R, p.bo_a, p.inj_a, L.hc_norm[1], L.hc_down[1], L.hc_up[1], L.hc_inj[1], eps, p.mixed, p.inj_f, Q0(q), QN(q), s, mh);
@@ -1644,6 +1654,10 @@ void Engine::prefill_pass(const std::vector<PfChunk>& chunks, bool staging, cons
                         ple_post(p.R + (size_t) r0 * D, p.ple_key + (size_t) r0 * D, p.ple_val + (size_t) r0 * N, w.ple_norm_key,
                                  w.ple_norm_query, w.ple_norm_conv, w.ple_conv, b.ple_hist, b.ple_hsnap, Tg, eps, s, p.ple_tmp);
                     }
+                }
+                if (!sa && apply && l != PLE_LAYER && cvk::cvec().covers(l - 1)) {   // engine.cu's enqueue() cvec point
+                    cvk::cvec_apply(p.R, l - 1, C, D, p.bo_f, N, p.inj_f, HC, true, s);
+                    apply = false;
                 }
                 if (!sa)
                     pf_hc_read(p, p.R, apply ? p.bo_f : nullptr, p.inj_f, L.hc_norm[0], L.hc_down[0], L.hc_up[0], L.hc_inj[0], eps, p.mixed,
