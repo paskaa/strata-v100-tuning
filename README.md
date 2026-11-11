@@ -232,3 +232,22 @@ bash /root/strata_ab13.sh 2
 - 服务端 #5643（reasoning 恢复）已合入：丢 reasoning 的多轮缓存命中 86%。
 - VRAM 提醒（上游 VRAM_HEADROOM）：余 277–297 MiB/卡落在布局敏感带；崩塌看分配布局
   不看剩余 MiB，长上下文冒烟待补。
+
+---
+
+## 12. 0.2.13 跟进：IQ4_XS 新配置 + refusal-cvec + Gyro-L TQP（2026-11-08 ~ 11-11）
+
+引擎分支：`v100-v213`（0.2.13 RC 基线；`v100-v211` 停在 0.2.12，不再动）。
+
+- **IQ4_XS v31 新配置**（`v100-v211`，11-08）：DFlash2 drafter（沿用 Q3 调优结论）+ parallel 1→2
+  （对齐 0.2.12 调优结果）+ expert-cache 20000 + resident-budget 64，layer_split 26。
+  配置已提交分支，实测数待补。
+- **0.2.13 RC 同步**：Q5_0 down 支持、EC_POOLS 8、#5643 reasoning 恢复、#5496 prompt-pick 修复，
+  随基线进 `v100-v213`。
+- **refusal-direction cvec 移植**（11-11）：steering 向量接入 sm_70 split 引擎——loader
+  （`cvec_load`）+ engine/prefill hooks + 开关 + Python 转发 + 测试，10 文件 700+ 行。
+  已移植，未编译验证。
+- **Gyro-L pair-trellis TQP5/6/7 解码移植**（11-11）：ggml 147~149 类型注册与块大小 +
+  新 `tq_dot.cuh` 点积（state walk + int8 LUT）+ MoE 三处 launch + down 32-wide 特判 +
+  shared-expert 融合路径与 `check_supported` 放行。权重已就位（TQ3_0 完整版 / noPLE 版 +
+  mtp draft + mmproj，11-11 下载完成）。待编译上卡验证。
