@@ -161,6 +161,7 @@ Follow the prompts to download and start a model. [Terminal guide](docs/TERMINAL
 | **Apple Silicon · M1 or newer** | [Mac setup](docs/MAC.md) |
 | **AMD Ryzen AI Max · Strix Halo** | [Strix Halo setup](docs/STRIX_HALO.md) |
 | **NVIDIA DGX Spark · Linux** | [DGX Spark setup](docs/DGX_SPARK_LINUX.md) |
+| **NVIDIA Tesla V100 · 16/32 GB (Volta, sm_70)** | [V100 tuning notes](https://github.com/paskaa/strata-v100-tuning) (split engine + Gyro-L TQP decode) |
 
 <a id="using-it"></a>
 
