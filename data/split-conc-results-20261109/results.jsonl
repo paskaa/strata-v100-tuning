@@ -1,0 +1,215 @@
+{
+ "port": 8090,
+ "model": "qwen3.8-flash-next-ud-q4_k_xl-split-test",
+ "groups": [
+  {
+   "group": "single",
+   "n_req": 1,
+   "rounds": [
+    {
+     "round": 0,
+     "wall_s": 9.33,
+     "req": [
+      {
+       "ok": true,
+       "wall_s": 9.32,
+       "decode_tps": 70.8,
+       "prompt_tps": 20.2,
+       "prompt_tokens": 135,
+       "completion_tokens": 200,
+       "predicted_n": 200
+      }
+     ],
+     "median_decode": 70.8,
+     "median_prompt": 20.2
+    },
+    {
+     "round": 1,
+     "wall_s": 5.49,
+     "req": [
+      {
+       "ok": true,
+       "wall_s": 5.49,
+       "decode_tps": 133.5,
+       "prompt_tps": 33.2,
+       "prompt_tokens": 137,
+       "completion_tokens": 200,
+       "predicted_n": 200
+      }
+     ],
+     "median_decode": 133.5,
+     "median_prompt": 33.2
+    },
+    {
+     "round": 2,
+     "wall_s": 8.12,
+     "req": [
+      {
+       "ok": true,
+       "wall_s": 8.12,
+       "decode_tps": 135.3,
+       "prompt_tps": 19.9,
+       "prompt_tokens": 134,
+       "completion_tokens": 200,
+       "predicted_n": 200
+      }
+     ],
+     "median_decode": 135.3,
+     "median_prompt": 19.9
+    },
+    {
+     "round": 3,
+     "wall_s": 5.44,
+     "req": [
+      {
+       "ok": true,
+       "wall_s": 5.43,
+       "decode_tps": 138.6,
+       "prompt_tps": 33.1,
+       "prompt_tokens": 136,
+       "completion_tokens": 200,
+       "predicted_n": 200
+      }
+     ],
+     "median_decode": 138.6,
+     "median_prompt": 33.1
+    },
+    {
+     "round": 4,
+     "wall_s": 5.74,
+     "req": [
+      {
+       "ok": true,
+       "wall_s": 5.73,
+       "decode_tps": 131.1,
+       "prompt_tps": 31.6,
+       "prompt_tokens": 137,
+       "completion_tokens": 200,
+       "predicted_n": 200
+      }
+     ],
+     "median_decode": 131.1,
+     "median_prompt": 31.6
+    }
+   ]
+  },
+  {
+   "group": "conc2",
+   "n_req": 2,
+   "rounds": [
+    {
+     "round": 0,
+     "wall_s": 16.57,
+     "req": [
+      {
+       "ok": true,
+       "wall_s": 16.57,
+       "decode_tps": 16.1,
+       "prompt_tps": 19.6,
+       "prompt_tokens": 138,
+       "completion_tokens": 200,
+       "predicted_n": 200
+      },
+      {
+       "ok": true,
+       "wall_s": 16.47,
+       "decode_tps": 66.2,
+       "prompt_tps": 19.3,
+       "prompt_tokens": 138,
+       "completion_tokens": 200,
+       "predicted_n": 200
+      }
+     ],
+     "median_decode": 41.2,
+     "median_prompt": 19.5
+    },
+    {
+     "round": 1,
+     "wall_s": 14.96,
+     "req": [
+      {
+       "ok": true,
+       "wall_s": 14.96,
+       "decode_tps": 64.6,
+       "prompt_tps": 28.2,
+       "prompt_tokens": 137,
+       "completion_tokens": 200,
+       "predicted_n": 200
+      },
+      {
+       "ok": true,
+       "wall_s": 14.85,
+       "decode_tps": 34.9,
+       "prompt_tps": 17.6,
+       "prompt_tokens": 137,
+       "completion_tokens": 200,
+       "predicted_n": 200
+      }
+     ],
+     "median_decode": 49.8,
+     "median_prompt": 22.9
+    },
+    {
+     "round": 2,
+     "wall_s": 17.81,
+     "req": [
+      {
+       "ok": true,
+       "wall_s": 17.81,
+       "decode_tps": 15.9,
+       "prompt_tps": 17.7,
+       "prompt_tokens": 137,
+       "completion_tokens": 200,
+       "predicted_n": 200
+      },
+      {
+       "ok": true,
+       "wall_s": 17.64,
+       "decode_tps": 88.8,
+       "prompt_tps": 17.6,
+       "prompt_tokens": 137,
+       "completion_tokens": 200,
+       "predicted_n": 200
+      }
+     ],
+     "median_decode": 52.4,
+     "median_prompt": 17.6
+    }
+   ]
+  },
+  {
+   "group": "conc4",
+   "n_req": 4,
+   "rounds": [
+    {
+     "round": 0,
+     "wall_s": 21.38,
+     "req": [
+      {
+       "ok": false,
+       "err": "HTTP Error 503: Service Unavailable",
+       "wall_s": 21.382457494735718
+      },
+      {
+       "ok": false,
+       "err": "HTTP Error 503: Service Unavailable",
+       "wall_s": 21.38080382347107
+      },
+      {
+       "ok": false,
+       "err": "HTTP Error 503: Service Unavailable",
+       "wall_s": 21.379613637924194
+      },
+      {
+       "ok": false,
+       "err": "HTTP Error 400: Bad Request",
+       "wall_s": 11.162197351455688
+      }
+     ],
+     "median_decode": null,
+     "median_prompt": null
+    }
+   ]
+  }
+ ]
+}

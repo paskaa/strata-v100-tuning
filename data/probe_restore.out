@@ -1,0 +1,33 @@
+[00:11:48] kill gateway=[1019573 ] engine=[1048441 ] vision=[1019595 ]
+[00:11:56] port listeners: 0
+[00:11:56] installed engine 133353064 bytes
+[00:11:56] config written: env=15 split=20
+[00:11:56] launched
+[00:12:58] loading pid=1067778 models=000 ~60s
+[00:14:00] loading pid=1067778 models=000 ~120s
+[00:15:01] loading pid=1067778 models=000 ~180s
+[00:16:03] loading pid=1067778 models=000 ~240s
+[00:17:04] loading pid=1067778 models=000 ~300s
+[00:18:05] loading pid=1067778 models=000 ~360s
+[00:19:07] loading pid=1067778 models=000 ~420s
+[00:20:08] loading pid=1067778 models=000 ~480s
+[00:21:09] loading pid=1067778 models=000 ~540s
+[00:22:11] loading pid=1067778 models=000 ~600s
+[00:23:12] loading pid=1067778 models=000 ~660s
+[00:24:14] loading pid=1067778 models=000 ~720s
+[00:25:15] loading pid=1067778 models=000 ~780s
+[00:26:16] loading pid=1067778 models=000 ~840s
+[00:27:18] READY pid=1067778 ~900s
+[00:27:18] cmdline: --resident-budget-gib 34 --spec 4 --draft dflash2 --layer-split 20 
+[00:27:18] env: 19 vars
+[00:27:18] --- 启动摘要
+strata generate: resident RAM mode: 31.81 GiB of experts in RAM (page-locked), 8104 in the GPU cache; adaptive swaps exchange them with the GPU cache (no file reads)
+strata serve: layer split: layers 0-19 (CUDA0), 20-47 (CUDA1), one hand-off per window
+strata serve: DFlash2 drafter on (/root/Strata-data/dflash2/qwen3.8-flash-next-dflash2.q4_0.pack, graphs captured in 6 ms); windows up to 6 tokens; no MTP layer is loaded (--draft-fallback none); layer split: the drafter is on CUDA1 (last stage), the other stages' taps are gathered onto it
+strata serve: 1451 MiB of VRAM free with everything loaded
+strata serve: CUDA1: 879 MiB of VRAM free with everything loaded
+[00:27:18] DONE
+[00:27:18] ready
+probe ok: prompt_n=4069 prefill=922.9 decode=36.7
+[00:27:29] pid before=1067778 after=1067778 cuBLAS=0
+[00:27:29] VERDICT[restore]: SAFE

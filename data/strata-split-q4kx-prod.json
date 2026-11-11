@@ -1,0 +1,53 @@
+{
+    "exe": "/root/Strata-upstream/engine-cuda12/strata-split-2-sm70",
+    "args": [
+        "--native",
+        "/root/Strata-V100/gguf-cache/UD-Q4_K_XL/Qwen3.8-Flash-Next-UD-Q4_K_XL-00001-of-00004.gguf",
+        "--mtp",
+        "/root/Strata-data/mtp/rt",
+        "--max-context",
+        "262144",
+        "--spec",
+        "8",
+        "--batch",
+        "1",
+        "--conversation-cache-mib",
+        "4096",
+        "--draft",
+        "dflash2",
+        "--draft-model",
+        "/root/Strata-data/dflash2/qwen3.8-flash-next-dflash2.q4_0.pack",
+        "--vision"
+    ],
+    "cwd": "/root/Strata-upstream",
+    "model_name": "qwen3.8-flash-next-ud-q4_k_xl",
+    "log": "/root/Strata-upstream/strata-split-q4kx-prod.log",
+    "lib_dirs": [
+        "/usr/local/cuda-12.8/bin",
+        "/usr/local/cuda-12.8/lib64"
+    ],
+    "port": 8089,
+    "cuda": 12,
+    "env": {
+        "FNX_EXPERT_RAM_GIB": "3",
+        "FNX_KV8": "0"
+    },
+    "gpu": [
+        0,
+        1
+    ],
+    "allowed_hosts": [
+        "127.0.0.1"
+    ],
+    "reasoning_budget_tokens": 8192,
+    "context": 262144,
+    "tokenizer": "/root/Strata-data/packs/unsloth-ud-q4_k_xl/tokenizer",
+    "vision": {
+        "exe": "/root/Strata-upstream/engine-cuda12/strata-vision",
+        "mmproj": "/root/Strata-data/models/mmproj-Qwen3.8-Flash-Next-BF16.gguf",
+        "model": "/root/Strata-V100/gguf-cache/UD-Q4_K_XL/Qwen3.8-Flash-Next-UD-Q4_K_XL-00001-of-00004.gguf",
+        "gpu": false,
+        "max_tokens": 1024,
+        "threads": 16
+    }
+}

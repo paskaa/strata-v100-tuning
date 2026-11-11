@@ -1,0 +1,62 @@
+[06:02:31] ############ NUMA ARM A rep1
+[06:02:31] ############ NUMA ARM A rep1
+[06:16:35] cmdline-check ok (numa=0)
+[06:16:35] cmdline-check ok (numa=0)
+[06:16:35] resident line: strata generate: resident RAM mode: 31.81 GiB of experts in RAM (page-locked), 8104 in the GPU cache; adaptive swaps exc
+[06:16:35] resident line: strata generate: resident RAM mode: 31.81 GiB of experts in RAM (page-locked), 8104 in the GPU cache; adaptive swaps exc
+[06:16:35] numa lines: FileExpertSource: NUMA placement: node 0 15.95 GiB (100.0 % of its slices), node 1 15.86 GiB (100.0 % of its slices); free before: node 0 0.40 GiB, node 1 0.35 
+[06:16:35] numa lines: FileExpertSource: NUMA placement: node 0 15.95 GiB (100.0 % of its slices), node 1 15.86 GiB (100.0 % of its slices); free before: node 0 0.40 GiB, node 1 0.35 
+approx   prompt_n  prefill_t/s  decode_t/s  decode(min~max) draft_acc
+60       132       84.0         67.7        62~73        35/50    
+1000     1071      276.8        63.3        60~67        32/70    
+4000     4072      891.2        57.2        54~60        24/69    
+8000     8072      1232.0       84.5        80~89        35/45    
+[06:17:31] ---- NUMA ARM A rep1 END
+[06:17:31] ---- NUMA ARM A rep1 END
+[06:17:31] ############ NUMA ARM B rep1
+[06:17:31] ############ NUMA ARM B rep1
+[06:32:17] cmdline-check ok (numa=1)
+[06:32:17] cmdline-check ok (numa=1)
+[06:32:17] resident line: strata generate: resident RAM mode: 31.81 GiB of experts in RAM (page-locked), 8104 in the GPU cache; adaptive swaps exc
+[06:32:17] resident line: strata generate: resident RAM mode: 31.81 GiB of experts in RAM (page-locked), 8104 in the GPU cache; adaptive swaps exc
+[06:32:17] numa lines: FileExpertSource: NUMA placement: node 0 15.95 GiB (100.0 % of its slices), node 1 15.86 GiB (100.0 % of its slices); free before: node 0 0.39 GiB, node 1 0.27 
+[06:32:17] numa lines: FileExpertSource: NUMA placement: node 0 15.95 GiB (100.0 % of its slices), node 1 15.86 GiB (100.0 % of its slices); free before: node 0 0.39 GiB, node 1 0.27 
+approx   prompt_n  prefill_t/s  decode_t/s  decode(min~max) draft_acc
+60       133       82.7         53.9        54~54        33/54    
+1000     1072      282.4        59.2        56~62        33/73    
+4000     4070      896.5        82.2        70~95        38/51    
+8000     8072      1232.3       77.5        65~90        37/55    
+[06:33:13] ---- NUMA ARM B rep1 END
+[06:33:13] ---- NUMA ARM B rep1 END
+[06:33:13] ############ NUMA ARM A rep2
+[06:33:13] ############ NUMA ARM A rep2
+[06:47:46] cmdline-check ok (numa=0)
+[06:47:46] cmdline-check ok (numa=0)
+[06:47:46] resident line: strata generate: resident RAM mode: 31.81 GiB of experts in RAM (page-locked), 8104 in the GPU cache; adaptive swaps exc
+[06:47:46] resident line: strata generate: resident RAM mode: 31.81 GiB of experts in RAM (page-locked), 8104 in the GPU cache; adaptive swaps exc
+[06:47:46] numa lines: FileExpertSource: NUMA placement: node 0 15.95 GiB (100.0 % of its slices), node 1 15.86 GiB (100.0 % of its slices); free before: node 0 0.60 GiB, node 1 0.17 
+[06:47:46] numa lines: FileExpertSource: NUMA placement: node 0 15.95 GiB (100.0 % of its slices), node 1 15.86 GiB (100.0 % of its slices); free before: node 0 0.60 GiB, node 1 0.17 
+approx   prompt_n  prefill_t/s  decode_t/s  decode(min~max) draft_acc
+60       132       83.8         69.2        69~70        37/50    
+1000     1071      282.1        63.0        62~64        27/63    
+4000     4072      891.0        75.2        74~77        35/58    
+8000     8072      1196.0       80.2        80~81        35/47    
+[06:48:43] ---- NUMA ARM A rep2 END
+[06:48:43] ---- NUMA ARM A rep2 END
+[06:48:43] ############ NUMA ARM B rep2
+[06:48:43] ############ NUMA ARM B rep2
+[07:03:04] cmdline-check ok (numa=1)
+[07:03:04] cmdline-check ok (numa=1)
+[07:03:04] resident line: strata generate: resident RAM mode: 31.81 GiB of experts in RAM (page-locked), 8104 in the GPU cache; adaptive swaps exc
+[07:03:04] resident line: strata generate: resident RAM mode: 31.81 GiB of experts in RAM (page-locked), 8104 in the GPU cache; adaptive swaps exc
+[07:03:04] numa lines: FileExpertSource: NUMA placement: node 0 15.95 GiB (100.0 % of its slices), node 1 15.86 GiB (100.0 % of its slices); free before: node 0 0.47 GiB, node 1 0.23 
+[07:03:04] numa lines: FileExpertSource: NUMA placement: node 0 15.95 GiB (100.0 % of its slices), node 1 15.86 GiB (100.0 % of its slices); free before: node 0 0.47 GiB, node 1 0.23 
+approx   prompt_n  prefill_t/s  decode_t/s  decode(min~max) draft_acc
+60       131       82.5         60.3        50~71        38/57    
+1000     1073      280.6        71.8        67~77        36/66    
+4000     4072      893.7        66.6        66~67        29/61    
+8000     8072      1234.4       73.5        66~81        31/48    
+[07:04:03] ---- NUMA ARM B rep2 END
+[07:04:03] ---- NUMA ARM B rep2 END
+[07:04:03] ALLDONE
+[07:04:03] ALLDONE
