@@ -310,9 +310,10 @@ Engine::Engine(Model& m, int max_ctx, int lanes) : m_(m), max_ctx_(max_ctx) {
             cb_[c]->ring.peer_in[d] = cb_[d]->ring.in;
             cb_[c]->att_ring.peer_in[d] = cb_[d]->att_ring.in;
         }
-        // one hop for the window sums and the attention merge on 3 or more cards (FNX_ONEHOP=0: the rings); the mailboxes live in the ring's buffers
-        // FNX_ONEHOP=2 (screen): the one-hop sum on two cards too (each card adds the two fp16-rounded addends in fp32: one host round trip instead of two; the sums differ in the last bits)
-        const bool onehop = (NCARD > 2 || peer_on || env_int("FNX_ONEHOP", 1) == 2) && env_int("FNX_ONEHOP", 1) != 0 && !cb_[c]->ring.f32;
+        // one hop for the window sums and the attention merge (FNX_ONEHOP=0: the rings); the mailboxes live in the ring's buffers
+        // TP2 opt (v100-v217-cvec): two cards run the one-hop sum too, not only 3 or more (each card adds the two fp16-rounded
+        // addends in fp32: one host round trip instead of the ring's two; the sums differ in the last bits, top-1 the same)
+        const bool onehop = env_int("FNX_ONEHOP", 1) != 0 && !cb_[c]->ring.f32;
         cb_[c]->ring.onehop = cb_[c]->att_ring.onehop = onehop;
         for (int d = 0; d < NCARD; ++d) cb_[c]->ring.peer_pk[d] = cb_[d]->ring.pk;
         cb_[c]->ring.peer = onehop && cb_[c]->ring.pk != nullptr;
